@@ -2,7 +2,12 @@ defmodule GmexTest do
   use ExUnit.Case
   doctest Gmex
 
-  # test "greets the world" do
-  #   assert Gmex.hello() == :world
-  # end
+  test "check image info" do
+
+    image_info = Gmex.open( "test/images/blossom.jpg" )
+      |> Gmex.get_info()
+
+    assert image_info == [:ok, [width: 640, height: 480, size: "86.5Ki", format: :jpeg, compression_quality: 92]]
+
+  end
 end

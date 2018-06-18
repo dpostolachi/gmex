@@ -1,306 +1,306 @@
 defmodule Gmex do
-    @moduledoc """
-    A simple wrapper for GraphicsMagick in Elixir.
-    """
+
+  @moduledoc """
+  A simple wrapper for GraphicsMagick in Elixir.
+  """
 
 
-    @doc """
-        Opens image source.
+  @doc """
+    Opens image source.
 
-    ## Example
-        iex> Gmex.open( "someimage.png" )
-        { :ok, [ "someimage.png" ] }
+  ## Example
+    iex> Gmex.open( "test/images/blossom.jpg" )
+    { :ok, [ "test/images/blossom.jpg" ] }
 
-        iex> Gmex.open( "non-existing.png" )
-        { :error, :enoent }
-    """
+    iex> Gmex.open( "non-existing.png" )
+    { :error, :enoent }
+  """
 
-    @spec open( String.t() ) :: Image | { :error, :enoent }
+  @spec open( String.t() ) :: Image | { :error, :enoent }
 
-    def open ( src_path ) do
-        if File.exists?( src_path ) do
-            { :ok, [ src_path ] }
-        else
-            { :error, :enoent }
-        end
+  def open ( src_path ) do
+    if File.exists?( src_path ) do
+      { :ok, [ src_path ] }
+    else
+      { :error, :enoent }
     end
+  end
 
 
-    @doc """
-    Saves the modified image
+  @doc """
+  Saves the modified image
 
-    ## Example
-        iex> Gmex.open( "someimage.png" )
-            |> save( "newimage.png" )
+  ## Example
+    iex> Gmex.open( "test/images/blossom.jpg" )
+    iex> |> Gmex.save( "newimage.jpg" )
+    { :ok, nil }
+
+  """
+
+  @spec save( Image, String.t() ) ::  { :ok, nil } | { :error, String.t() }
+
+  def save( image, dest_path ) do
+
+    with { :ok, options } <- image do
+
+      new_options = options ++ [ dest_path ]
+
+      { result, status_code } = System.cmd "gm", [ "convert" ] ++ new_options, stderr_to_stdout: true
+
+      if status_code == 0 do
         { :ok, nil }
+      else
+        { :error, result }
+      end
 
-    """
-
-    @spec save( Image, String.t() ) ::  { :ok, nil } | { :error, String.t() }
-
-    def save( image = { :ok, options }, dest_path ) do
-
-        new_options = options ++ [ dest_path ]
-
-        { result, status_code } = System.cmd "gm", [ "convert" ] ++ new_options
-
-        if status_code == 0 do
-            { :ok, nil }
-        else
-            { :error, result }
-        end
-
+    else
+      err -> err
     end
 
+  end
 
-    @doc """
-        Returns a keywords list with information about the image like width, height, size, format and quality.
-    """
 
-    @spec get_info( Image ) ::  { :ok, [ width: Integer.t(), height: Integer.t(), size: String.t(), format: String.t(), quality: Integer.t() ] } | { :error, String.t() }
+  @doc """
+    Returns a keywords list with information about the image like width, height, size, format and quality.
+  """
 
-    def get_info( image = { :ok, options } ) do
+  @spec get_info( Image ) ::  { :ok, [ width: Integer.t(), height: Integer.t(), size: String.t(), format: String.t(), quality: Integer.t() ] } | { :error, String.t() }
 
-        [ src_path | _ ] = options
+  def get_info( image ) do
 
-        { image_data, status_code } = System.cmd "gm", [ "identify", "-format", "width=%w,height=%h,size=%b,format=%m,quality=%Q", src_path ]
+    with { :ok, options } <- image do
 
-        if status_code == 0 do
+      [ src_path | _ ] = options
 
-            [ :ok, String.split( image_data, "," )
+      { image_data, status_code } = System.cmd "gm", [ "identify", "-format", "width=%w,height=%h,size=%b,format=%m,quality=%Q", src_path ], stderr_to_stdout: true
 
-                |> Enum.reduce( [], fn ( row, acc ) ->
+      if status_code == 0 do
 
-                    [ field , value ] = String.split( row, "=" )
-                        |> Enum.map( &String.strip/1 )
+        [   :ok,
+          String.split( image_data, "," )
+            |> Enum.reduce( [], fn ( row, acc ) ->
 
-                    case field do
+              [ field , value ] = String.split( row, "=" )
+                |> Enum.map( &String.trim/1 )
 
-                        "width" ->
-                            width = value
-                                |> String.to_integer()
-                            acc ++ [ width: width ]
+              case field do
 
-                        "height" ->
-                            width = value
-                                |> String.to_integer()
-                            acc ++ [ height: width ]
+                "width" ->
+                  width = value
+                    |> String.to_integer()
+                  acc ++ [ width: width ]
 
-                        "format" ->
-                            format = value
-                                |> String.downcase()
-                                |> String.to_atom()
-                            acc ++ [ format: format ]
+                "height" ->
+                  width = value
+                    |> String.to_integer()
+                  acc ++ [ height: width ]
 
-                        "quality" ->
-                            quality = value
-                                |> String.to_integer()
+                "format" ->
+                  format = value
+                    |> String.downcase()
+                    |> String.to_atom()
+                  acc ++ [ format: format ]
 
-                            acc ++ [ compression_quality: quality ]
+                "quality" ->
+                  quality = value
+                    |> String.to_integer()
 
-                        _ -> acc
+                  acc ++ [ compression_quality: quality ]
 
-                        "size" ->
-                            acc ++ [ size: value ]
+                "size" ->
+                  acc ++ [ size: value ]
 
-                    end
+                _ -> acc
 
-                end )
+              end
 
-            ]
+            end ) ]
 
-        else
+      else
+        { :error, image_data }
+      end
 
-            { :error, image_data }
-
-        end
-
+    else
+      err -> err
     end
 
-    @doc """
-    Apply a GraphicsMagick option to the given image.
+  end
 
-    ## Example
-        open( "someimage.png" )
-            |> option( :negate )
-            |> option( { :resize, 50, 50 } )
-            |> option( :strip )
-            |> option( :format, "jpg" )
-        { :ok, [ "someimage.png", "-negate", "-resize", "50x50", "-strip", "-format" "jpg" ] }
+  @doc """
+  Apply a GraphicsMagick option to the given image.
 
-    List of available options:
+  ## Example
+    iex> Gmex.open( "test/images/blossom.jpg" )
+    iex> |> Gmex.option( :negate )
+    iex> |> Gmex.option( { :resize, 50, 50 } )
+    iex> |> Gmex.option( :strip )
+    iex> |> Gmex.option( { :format, "jpg" } )
+    { :ok, [ "test/images/blossom.jpg", "-negate", "-resize", "50x50", "-strip", "-format", "jpg" ] }
 
-    | Option | GraphicsMagick |
-    | ---- | ---- |
-    | :plus_adjoin | +adjoin |
-    | :adjoin | -adjoin |
-    | { :blur, radius, sigma } | -blur radiusxsigma |
-    | { :blur, radius } | -blur radius |
-    | { :crop, width, height, x_offset, y_offset } | -crop widthxheight+x_offset+y_offset |
-    | { :crop, width, height } | -crop widthxheight |
-    | { :edge, edge } | -edge edge |
-    | { :extent, width, height, x_offset, y_offset } | -extent widthxheight+x_offset+y_offset |
-    | { :extent, width, height } | -extent widthxheight |
-    | flatten | -flatten |
-    | { :fill, color } | -fill color |
-    | :strip | -strip |
-    | :flip | -flip |
-    | { :format, format } | -format format |
-    | { :gravity, gravity } | -gravity gravity |
-    | magnify | -magnify |
-    | plus_matte | +matte |
-    | matte | -matte |
-    | negate | -negate |
-    | { :opaque, color } | -opaque color |
-    | { :quality, quality } | -quality quality |
-    | { :resize, width, height } | -resize widthxheight |
-    | { :resize, percents } | -resize percents% |
-    | { :rotate, degrees } | -rotate degrees |
-    | { :size, width, height } | -size widthxheight |
-    | { :size, width, height, offset } | -size widthxheight+offset |
-    | { :thumbnail, width, height } | -thumbnail widthxheight |
-    | { :thumbnail, percents } | -thumbnail percents% |
-    | { :transparent, color } | -transparent color |
-    | { :type, type } | -type type |
-    | { :custom, [ arg1, arg2, arg3... ] } | arg1 arg2 arg3 ... |
-    """
+  List of available options:
 
-    @spec option( Image, Option ) :: Image | { :error, any() }
+  | Option | GraphicsMagick |
+  | ---- | ---- |
+  | :plus_adjoin | +adjoin |
+  | :adjoin | -adjoin |
+  | { :blur, radius, sigma } | -blur radiusxsigma |
+  | { :blur, radius } | -blur radius |
+  | { :crop, width, height, x_offset, y_offset } | -crop widthxheight+x_offset+y_offset |
+  | { :crop, width, height } | -crop widthxheight |
+  | { :edge, edge } | -edge edge |
+  | { :extent, width, height, x_offset, y_offset } | -extent widthxheight+x_offset+y_offset |
+  | { :extent, width, height } | -extent widthxheight |
+  | flatten | -flatten |
+  | { :fill, color } | -fill color |
+  | :strip | -strip |
+  | :flip | -flip |
+  | { :format, format } | -format format |
+  | { :gravity, gravity } | -gravity gravity |
+  | magnify | -magnify |
+  | plus_matte | +matte |
+  | matte | -matte |
+  | negate | -negate |
+  | { :opaque, color } | -opaque color |
+  | { :quality, quality } | -quality quality |
+  | { :resize, width, height } | -resize widthxheight |
+  | { :resize, percents } | -resize percents% |
+  | { :rotate, degrees } | -rotate degrees |
+  | { :size, width, height } | -size widthxheight |
+  | { :size, width, height, offset } | -size widthxheight+offset |
+  | { :thumbnail, width, height } | -thumbnail widthxheight |
+  | { :thumbnail, percents } | -thumbnail percents% |
+  | { :transparent, color } | -transparent color |
+  | { :type, type } | -type type |
+  | { :custom, [ arg1, arg2, arg3... ] } | arg1 arg2 arg3 ... |
+  """
 
-    def option( image = { :ok, options }, option ) do
+  @spec option( Image, Option ) :: Image | { :error, any() }
 
-        append = case option do
+  def option( image, option ) do
 
-            :plus_adjoin ->
-                [ "+adjoin" ]
+    with { :ok, options } <- image do
 
-            :adjoin ->
-                [ "-adjoin" ]
+      append = case option do
 
-            { :background, color } ->
-                [ "-background", color ]
+        :plus_adjoin ->
+          [ "+adjoin" ]
 
-            { :blur, radius, sigma } ->
-                [ "-blur", "#{radius}x#{sigma}" ]
+        :adjoin ->
+          [ "-adjoin" ]
 
-            { :blur, radius } ->
-                [ "-blur", "#{radius}" ]
+        { :background, color } ->
+          [ "-background", color ]
 
-            { :crop, width, height } ->
-                [ "-crop", "#{width}x#{height}" ]
+        { :blur, radius, sigma } ->
+          [ "-blur", "#{radius}x#{sigma}" ]
 
-            { :crop, width, height, x_offset, y_offset } ->
+        { :blur, radius } ->
+          [ "-blur", "#{radius}" ]
 
-                if x_offset > 0 do
-                    x_offset = "+#{x_offset}"
-                end
-                if y_offset > 0 do
-                    y_offset = "+#{y_offset}"
-                end
+        { :crop, width, height } ->
+          [ "-crop", "#{width}x#{height}" ]
 
-                [ "-crop", "#{width}x#{height}#{x_offset}#{y_offset}" ]
+        { :crop, width, height, x_offset, y_offset } ->
 
-            { :edge, radius } ->
-                [ "-edge", radius ]
+          x_offset = if x_offset > 0, do: "+#{x_offset}", else: x_offset
+          y_offset = if y_offset > 0, do: "+#{y_offset}", else: y_offset
 
-            { :extent, width, height } ->
-                [ "-extent", "#{width}x#{height}" ]
+          [ "-crop", "#{width}x#{height}#{x_offset}#{y_offset}" ]
 
-            { :extent, width, height, x_offset, y_offset } ->
+        { :edge, radius } ->
+          [ "-edge", radius ]
 
-                if x_offset > 0 do
-                    x_offset = "+#{x_offset}"
-                end
-                if y_offset > 0 do
-                    y_offset = "+#{y_offset}"
-                end
+        { :extent, width, height } ->
+          [ "-extent", "#{width}x#{height}" ]
 
-                [ "-extent", "#{width}x#{height}#{x_offset}#{y_offset}" ]
+        { :extent, width, height, x_offset, y_offset } ->
+
+          x_offset = if x_offset > 0, do: "+#{x_offset}", else: x_offset
+          y_offset = if y_offset > 0, do: "+#{y_offset}", else: y_offset
+
+          [ "-extent", "#{width}x#{height}#{x_offset}#{y_offset}" ]
 
 
-            :flatten ->
-                [ "-flatten" ]
+        :flatten ->
+          [ "-flatten" ]
 
-            { :fill, color } ->
-                [ "-flatten", color ]
+        { :fill, color } ->
+          [ "-flatten", color ]
 
-            :strip ->
-                [ "-strip" ]
+        :strip ->
+          [ "-strip" ]
 
-            :flip ->
-                [ "-flip" ]
+        :flip ->
+          [ "-flip" ]
 
-            { :format, format } ->
-                [ "-format", format ]
+        { :format, format } ->
+          [ "-format", format ]
 
-            { :gravity, gravity } ->
-                [ "-gravity", gravity ]
+        { :gravity, gravity } ->
+          [ "-gravity", gravity ]
 
-            :magnify ->
-                [ "magnify" ]
+        :magnify ->
+          [ "magnify" ]
 
-            :plus_matte ->
-                [ "+matte" ]
+        :plus_matte ->
+          [ "+matte" ]
 
-            :matte ->
-                [ "-matte" ]
+        :matte ->
+          [ "-matte" ]
 
-            :negate ->
-                [ "-negate" ]
+        :negate ->
+          [ "-negate" ]
 
-            { :opaque, color } ->
-                [ "-opaque", color ]
+        { :opaque, color } ->
+          [ "-opaque", color ]
 
-            { :quality, quality } ->
-                [ "-quality", quality ]
+        { :quality, quality } ->
+          [ "-quality", quality ]
 
-            { :resize, width, height } ->
-                [ "-resize", "#{width}x#{height}" ]
+        { :resize, width, height } ->
+          [ "-resize", "#{width}x#{height}" ]
 
-            { :resize, percents } ->
-                [ "-resize", "#{percents}%" ]
+        { :resize, percents } ->
+          [ "-resize", "#{percents}%" ]
 
-            { :rotate, degrees } ->
-                [ "-rotate", degrees ]
+        { :rotate, degrees } ->
+          [ "-rotate", degrees ]
 
-            { :size, width, height } ->
-                [ "-size", "#{width}x#{height}" ]
+        { :size, width, height } ->
+          [ "-size", "#{width}x#{height}" ]
 
-            { :size, width, height, offset } ->
-                [ "-size", "#{width}x#{height}+#{offset}" ]
+        { :size, width, height, offset } ->
+          [ "-size", "#{width}x#{height}+#{offset}" ]
 
-            { :thumbnail, width, height } ->
-                [ "-thumbnail", "#{width}x#{height}" ]
+        { :thumbnail, width, height } ->
+          [ "-thumbnail", "#{width}x#{height}" ]
 
-            { :thumbnail, percents } ->
-                [ "-thumbnail", "#{percents}%" ]
+        { :thumbnail, percents } ->
+          [ "-thumbnail", "#{percents}%" ]
 
-            { :transparent, color } ->
-                [ "-transparent", color ]
+        { :transparent, color } ->
+          [ "-transparent", color ]
 
-            { :type, type } ->
-                [ "-type", type ]
+        { :type, type } ->
+          [ "-type", type ]
 
-            { :custom, other_options } ->
-                other_options
+        { :custom, other_options } ->
+          other_options
 
-            _ -> :unknown_option
+        _ -> :unknown_option
 
-        end
+      end
 
-        if append == :unknown_option do
-            { :error, :unknown_option }
-        else
-            { :ok, options ++ append }
-        end
+      if append == :unknown_option do
+        { :error, :unknown_option }
+      else
+        { :ok, options ++ append }
+      end
 
+    else
+      err -> err
     end
 
-    def option( { :error, options }, _ ) do
-        { :error, options }
-    end
+  end
 
-    def save( { :error, options }, _ ) do
-        { :error, options }
-    end
 end
