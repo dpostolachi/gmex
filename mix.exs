@@ -7,6 +7,8 @@ defmodule Gmex.Mixfile do
       version: "0.1.0",
       elixir: "~> 1.5",
       start_permanent: Mix.env == :prod,
+      description: description(),
+      package: package(),
       deps: deps()
     ]
   end
@@ -27,4 +29,21 @@ defmodule Gmex.Mixfile do
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
     ]
   end
+
+  defp package do
+      [
+          name: "gmex",
+          files: [ "lib", "mix.exs", "README.md" ],
+          licenses: [ "MIT" ],
+          links: %{
+              "GitHub" => "https://github.com/voodoo-child/gmex"
+          },
+          maintainers: [ "voodoo-child" ]
+      ]
+  end
+
+  defp description do
+      "A simple GraphicsMagick wrapper for Elixir."
+  end
+
 end
