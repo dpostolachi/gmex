@@ -6,6 +6,6 @@ matrix:
     - otp_release: 20.0
       elixir: 1.5
 before_install:
-  - sudo add-apt-repository ppa:rwky/graphicsmagick
+  - sudo add-apt-repository ppa:rwky/graphicsmagick -y
   - sudo apt-get update
   - sudo apt-get install graphicsmagick
