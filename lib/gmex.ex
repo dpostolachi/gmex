@@ -9,11 +9,11 @@ defmodule Gmex do
     Opens image source.
 
   ## Example
-    iex> Gmex.open( "test/images/blossom.jpg" )
-    { :ok, [ "test/images/blossom.jpg" ] }
+      iex> Gmex.open( "test/images/blossom.jpg" )
+      { :ok, [ "test/images/blossom.jpg" ] }
 
-    iex> Gmex.open( "non-existing.png" )
-    { :error, :enoent }
+      iex> Gmex.open( "non-existing.png" )
+      { :error, :enoent }
   """
 
   @spec open( String.t() ) :: Image | { :error, :enoent }
@@ -31,9 +31,9 @@ defmodule Gmex do
   Saves the modified image
 
   ## Example
-    iex> Gmex.open( "test/images/blossom.jpg" )
-    iex> |> Gmex.save( "newimage.jpg" )
-    { :ok, nil }
+      iex> Gmex.open( "test/images/blossom.jpg" )
+      iex> |> Gmex.save( "newimage.jpg" )
+      { :ok, nil }
 
   """
 
@@ -130,12 +130,12 @@ defmodule Gmex do
   Apply a GraphicsMagick option to the given image.
 
   ## Example
-    iex> Gmex.open( "test/images/blossom.jpg" )
-    iex> |> Gmex.option( :negate )
-    iex> |> Gmex.option( { :resize, 50, 50 } )
-    iex> |> Gmex.option( :strip )
-    iex> |> Gmex.option( { :format, "jpg" } )
-    { :ok, [ "test/images/blossom.jpg", "-negate", "-resize", "50x50", "-strip", "-format", "jpg" ] }
+      iex> Gmex.open( "test/images/blossom.jpg" )
+      iex> |> Gmex.option( :negate )
+      iex> |> Gmex.option( { :resize, 50, 50 } )
+      iex> |> Gmex.option( :strip )
+      iex> |> Gmex.option( { :format, "jpg" } )
+      { :ok, [ "test/images/blossom.jpg", "-negate", "-resize", "50x50", "-strip", "-format", "jpg" ] }
 
   List of available options:
 
