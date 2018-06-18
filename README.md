@@ -1,10 +1,14 @@
 # Gmex
 
-**TODO: Add description**
+A simple GraphicsMagick wrapper for Elixir.
+
+## Documentation
+
+Documentation is available here: [https://hexdocs.pm/gmex/Gmex.html](https://hexdocs.pm/gmex/Gmex.html)
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
+The package can be installed
 by adding `gmex` to your list of dependencies in `mix.exs`:
 
 ```elixir
