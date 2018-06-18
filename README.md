@@ -15,7 +15,19 @@ def deps do
 end
 ```
 
+## Usage example
+
+```elixir
+import Gmex
+open( "someimage.png" )
+    |> option( :negate )
+    |> option( { :resize, 50, 50 } )
+    |> option( :strip )
+    |> option( { :format, "jpg" } )
+    |> save( "newimage.jpg" )
+```
+
+
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at [https://hexdocs.pm/gmex](https://hexdocs.pm/gmex).
-
