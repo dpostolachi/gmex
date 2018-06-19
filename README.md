@@ -8,6 +8,14 @@ A simple GraphicsMagick wrapper for Elixir.
 
 Documentation is available here: [https://hexdocs.pm/gmex/Gmex.html](https://hexdocs.pm/gmex/Gmex.html)
 
+## Requirements
+
+Installed `graphicsmagick`.
+
+Elixir ~> 1.2
+
+Erlang/OTP ~> 18.0
+
 ## Installation
 
 The package can be installed
