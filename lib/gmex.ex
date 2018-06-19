@@ -37,9 +37,6 @@ defmodule Gmex do
       iex> Gmex.open( "test/images/blossom.jpg" )
       { :ok, %Gmex.Image{ image: "test/images/blossom.jpg", options: [ "gm" ] } }
 
-      iex> Gmex.open( "test/images/blossom.jpg", gm_path: "/usr/local/bin/gm" )
-      { :ok, %Gmex.Image{ image: "test/images/blossom.jpg", options: [ "/usr/local/bin/gm" ] } }
-
       iex> Gmex.open( "non-existing.png" )
       { :error, :enoent }
 
