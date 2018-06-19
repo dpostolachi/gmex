@@ -57,8 +57,6 @@ defmodule Gmex do
         { :error, result }
       end
 
-    else
-      image
     end
 
   end
@@ -127,8 +125,6 @@ defmodule Gmex do
         { :error, image_data }
       end
 
-    else
-      image
     end
 
   end
@@ -304,8 +300,6 @@ defmodule Gmex do
         { :ok, options ++ append }
       end
 
-    else
-      image
     end
 
   end
