@@ -4,40 +4,57 @@ defmodule Gmex do
   A simple wrapper for GraphicsMagick in Elixir.
   """
 
+  @default_options [
+      gm_path: "gm"
+  ]
+
   @type image :: { :ok, Gmex.Image }
   @type gmex_error :: { :error, any() }
   @type image_info :: [ width: Integer.t, height: Integer.t, size: String.t, format: String.t, quality: Integer.t ]
+  @type open_options :: [ gm_path: String.t() ]
 
   @doc false
 
-  def test_gm do
-    if System.find_executable( "gm" ) == nil do
-      { :error, "graphicsmagick executable not found" }
+  def test_gm( options \\ [] ) do
+
+    final_options = Keyword.merge( @default_options, options )
+    executable = Keyword.get( final_options, :gm_path )
+
+    if System.find_executable( executable ) == nil do
+      { :error, "graphicsmagick executable not found at:#{executable}" }
     else
-      :ok
+      { :ok, executable }
     end
+
   end
 
   @doc """
-    Opens image source.
+  Opens image source.
 
+  ## Options
+    * `:gm_path` - path to GraphicsMagick executable, defaults to `gm`
   ## Example
       iex> Gmex.open( "test/images/blossom.jpg" )
-      { :ok, %Gmex.Image{ image: "test/images/blossom.jpg", options: [] } }
+      { :ok, %Gmex.Image{ image: "test/images/blossom.jpg", options: [ "gm" ] } }
+
+      iex> Gmex.open( "test/images/blossom.jpg", gm_path: "/usr/local/bin/gm" )
+      { :ok, %Gmex.Image{ image: "test/images/blossom.jpg", options: [ "/usr/local/bin/gm" ] } }
 
       iex> Gmex.open( "non-existing.png" )
       { :error, :enoent }
+
   """
 
-  @spec open( String.t() ) :: image | gmex_error
+  @spec open( String.t(), [ open_options ] ) :: image | gmex_error
 
-  def open ( src_path ) do
-    with :ok <- test_gm()
+  def open( src_path, options \\ [] ) do
+    with { :ok, executable } <- test_gm( options )
     do
       if File.exists?( src_path ) do
+
         { :ok, %Gmex.Image{
           image: src_path,
-          options: [ ]
+          options: [ executable ]
         } }
       else
         { :error, :enoent }
@@ -60,12 +77,14 @@ defmodule Gmex do
 
   def save( image, dest_path ) do
 
-    with { :ok, image_struct } <- image,
-         :ok <- test_gm()
+    with { :ok, image_struct } <- image
     do
-      new_options = [ image_struct.image ] ++ image_struct.options ++ [ dest_path ]
 
-      { result, status_code } = System.cmd "gm", [ "convert" ] ++ new_options, stderr_to_stdout: true
+      [ executable | final_options ] = image_struct.options
+
+      final_options =  [ "convert" | [ image_struct.image | final_options ] ] ++ [ dest_path ]
+
+      { result, status_code } = System.cmd executable, final_options , stderr_to_stdout: true
 
       result = result
         |> String.replace( "\r", "" )
@@ -90,11 +109,12 @@ defmodule Gmex do
 
   def get_info( image ) do
 
-    with { :ok, image_struct } <- image,
-         :ok <- test_gm()
+    with { :ok, image_struct } <- image
     do
 
-      { image_data, status_code } = System.cmd "gm", [ "identify", "-format", "width=%w,height=%h,size=%b,format=%m,quality=%Q", image_struct.image ], stderr_to_stdout: true
+      [ executable | _ ] = image_struct.options
+
+      { image_data, status_code } = System.cmd executable, [ "identify", "-format", "width=%w,height=%h,size=%b,format=%m,quality=%Q", image_struct.image ], stderr_to_stdout: true
 
       image_data = image_data
         |> String.replace( "\r", "" )
@@ -158,7 +178,7 @@ defmodule Gmex do
       iex> |> Gmex.option( { :resize, 50, 50 } )
       iex> |> Gmex.option( :strip )
       iex> |> Gmex.option( { :format, "jpg" } )
-      { :ok, %Gmex.Image{ image: "test/images/blossom.jpg", options: [ "-negate", "-resize", "50x50", "-strip", "-format", "jpg" ] } }
+      { :ok, %Gmex.Image{ image: "test/images/blossom.jpg", options: [ "gm", "-negate", "-resize", "50x50", "-strip", "-format", "jpg" ] } }
 
   List of available options:
 

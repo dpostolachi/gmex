@@ -2,7 +2,7 @@ defmodule GmexTest do
   use ExUnit.Case
   doctest Gmex
 
-  test "check image info" do
+  test "Check image info" do
 
     image_info = Gmex.open( "test/images/blossom.jpg" )
       |> Gmex.get_info()
@@ -11,9 +11,12 @@ defmodule GmexTest do
 
   end
 
-  test "check gm executable" do
+  test "Check GraphicsMagick executable" do
 
-    assert Gmex.test_gm() == :ok
+    { status, _ } = Gmex.test_gm()
+
+    assert status == :ok
 
   end
+
 end
