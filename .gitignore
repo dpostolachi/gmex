@@ -1,6 +1,9 @@
 #Test files
 newimage.jpg
 
+#Asdf
+.tool-versions*
+
 #Mac stuff.
 .DS_Store
 

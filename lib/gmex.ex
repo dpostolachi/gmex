@@ -47,6 +47,10 @@ defmodule Gmex do
 
       { result, status_code } = System.cmd "gm", [ "convert" ] ++ new_options, stderr_to_stdout: true
 
+      result = result
+        |> String.replace( "\r", "" )
+        |> String.replace( "\n", "" )
+
       if status_code == 0 do
         { :ok, nil }
       else
@@ -54,7 +58,7 @@ defmodule Gmex do
       end
 
     else
-      err -> err
+      image
     end
 
   end
@@ -74,6 +78,10 @@ defmodule Gmex do
 
       { image_data, status_code } = System.cmd "gm", [ "identify", "-format", "width=%w,height=%h,size=%b,format=%m,quality=%Q", src_path ], stderr_to_stdout: true
 
+      image_data = image_data
+        |> String.replace( "\r", "" )
+        |> String.replace( "\n", "" )
+
       if status_code == 0 do
 
         [   :ok,
@@ -81,7 +89,6 @@ defmodule Gmex do
             |> Enum.reduce( [], fn ( row, acc ) ->
 
               [ field , value ] = String.split( row, "=" )
-                |> Enum.map( &String.trim/1 )
 
               case field do
 
@@ -121,7 +128,7 @@ defmodule Gmex do
       end
 
     else
-      err -> err
+      image
     end
 
   end
@@ -298,7 +305,7 @@ defmodule Gmex do
       end
 
     else
-      err -> err
+      image
     end
 
   end
