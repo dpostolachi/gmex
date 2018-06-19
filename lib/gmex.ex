@@ -4,6 +4,19 @@ defmodule Gmex do
   A simple wrapper for GraphicsMagick in Elixir.
   """
 
+  @type image :: { :ok, Gmex.Image }
+  @type gmex_error :: { :error, any() }
+  @type image_info :: [ width: Integer.t, height: Integer.t, size: String.t, format: String.t, quality: Integer.t ]
+
+  @doc false
+
+  def test_gm do
+    if System.find_executable( "gm" ) == nil do
+      { :error, "graphicsmagick executable not found" }
+    else
+      :ok
+    end
+  end
 
   @doc """
     Opens image source.
@@ -16,20 +29,19 @@ defmodule Gmex do
       { :error, :enoent }
   """
 
-  @type image :: { :ok, Gmex.Image }
-  @type gmex_error :: { :error, any() }
-  @type image_info :: [ width: Integer.t, height: Integer.t, size: String.t, format: String.t, quality: Integer.t ]
-
   @spec open( String.t() ) :: image | gmex_error
 
   def open ( src_path ) do
-    if File.exists?( src_path ) do
-      { :ok, %Gmex.Image{
-        image: src_path,
-        options: [ ]
-      } }
-    else
-      { :error, :enoent }
+    with :ok <- test_gm()
+    do
+      if File.exists?( src_path ) do
+        { :ok, %Gmex.Image{
+          image: src_path,
+          options: [ ]
+        } }
+      else
+        { :error, :enoent }
+      end
     end
   end
 
@@ -48,8 +60,9 @@ defmodule Gmex do
 
   def save( image, dest_path ) do
 
-    with { :ok, image_struct } <- image do
-
+    with { :ok, image_struct } <- image,
+         :ok <- test_gm()
+    do
       new_options = [ image_struct.image ] ++ image_struct.options ++ [ dest_path ]
 
       { result, status_code } = System.cmd "gm", [ "convert" ] ++ new_options, stderr_to_stdout: true
@@ -77,7 +90,9 @@ defmodule Gmex do
 
   def get_info( image ) do
 
-    with { :ok, image_struct } <- image do
+    with { :ok, image_struct } <- image,
+         :ok <- test_gm()
+    do
 
       { image_data, status_code } = System.cmd "gm", [ "identify", "-format", "width=%w,height=%h,size=%b,format=%m,quality=%Q", image_struct.image ], stderr_to_stdout: true
 
@@ -186,7 +201,8 @@ defmodule Gmex do
 
   def option( image, option ) do
 
-    with { :ok, image } <- image do
+    with { :ok, image } <- image
+    do
 
       new_option = case option do
 
