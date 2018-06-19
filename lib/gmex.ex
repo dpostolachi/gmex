@@ -10,17 +10,24 @@ defmodule Gmex do
 
   ## Example
       iex> Gmex.open( "test/images/blossom.jpg" )
-      { :ok, [ "test/images/blossom.jpg" ] }
+      { :ok, %Gmex.Image{ image: "test/images/blossom.jpg", options: [] } }
 
       iex> Gmex.open( "non-existing.png" )
       { :error, :enoent }
   """
 
-  @spec open( String.t() ) :: Image | { :error, :enoent }
+  @type image :: { :ok, Gmex.Image }
+  @type gmex_error :: { :error, any() }
+  @type image_info :: [ width: Integer.t, height: Integer.t, size: String.t, format: String.t, quality: Integer.t ]
+
+  @spec open( String.t() ) :: image | gmex_error
 
   def open ( src_path ) do
     if File.exists?( src_path ) do
-      { :ok, [ src_path ] }
+      { :ok, %Gmex.Image{
+        image: src_path,
+        options: [ ]
+      } }
     else
       { :error, :enoent }
     end
@@ -37,13 +44,13 @@ defmodule Gmex do
 
   """
 
-  @spec save( Image, String.t() ) ::  { :ok, nil } | { :error, String.t() }
+  @spec save( image, String.t() ) :: image | gmex_error
 
   def save( image, dest_path ) do
 
-    with { :ok, options } <- image do
+    with { :ok, image_struct } <- image do
 
-      new_options = options ++ [ dest_path ]
+      new_options = [ image_struct.image ] ++ image_struct.options ++ [ dest_path ]
 
       { result, status_code } = System.cmd "gm", [ "convert" ] ++ new_options, stderr_to_stdout: true
 
@@ -66,15 +73,13 @@ defmodule Gmex do
     Returns a keywords list with information about the image like width, height, size, format and quality.
   """
 
-  @spec get_info( Image ) ::  { :ok, [ width: Integer.t(), height: Integer.t(), size: String.t(), format: String.t(), quality: Integer.t() ] } | { :error, String.t() }
+  @spec get_info( image ) ::  { :ok, image_info } | gmex_error
 
   def get_info( image ) do
 
-    with { :ok, options } <- image do
+    with { :ok, image_struct } <- image do
 
-      [ src_path | _ ] = options
-
-      { image_data, status_code } = System.cmd "gm", [ "identify", "-format", "width=%w,height=%h,size=%b,format=%m,quality=%Q", src_path ], stderr_to_stdout: true
+      { image_data, status_code } = System.cmd "gm", [ "identify", "-format", "width=%w,height=%h,size=%b,format=%m,quality=%Q", image_struct.image ], stderr_to_stdout: true
 
       image_data = image_data
         |> String.replace( "\r", "" )
@@ -82,7 +87,7 @@ defmodule Gmex do
 
       if status_code == 0 do
 
-        [   :ok,
+        [ :ok,
           String.split( image_data, "," )
             |> Enum.reduce( [], fn ( row, acc ) ->
 
@@ -138,7 +143,7 @@ defmodule Gmex do
       iex> |> Gmex.option( { :resize, 50, 50 } )
       iex> |> Gmex.option( :strip )
       iex> |> Gmex.option( { :format, "jpg" } )
-      { :ok, [ "test/images/blossom.jpg", "-negate", "-resize", "50x50", "-strip", "-format", "jpg" ] }
+      { :ok, %Gmex.Image{ image: "test/images/blossom.jpg", options: [ "-negate", "-resize", "50x50", "-strip", "-format", "jpg" ] } }
 
   List of available options:
 
@@ -177,13 +182,13 @@ defmodule Gmex do
   | { :custom, [ arg1, arg2, arg3... ] } | arg1 arg2 arg3 ... |
   """
 
-  @spec option( Image, Option ) :: Image | { :error, any() }
+  @spec option( image, Option ) :: image | gmex_error
 
   def option( image, option ) do
 
-    with { :ok, options } <- image do
+    with { :ok, image } <- image do
 
-      append = case option do
+      new_option = case option do
 
         :plus_adjoin ->
           [ "+adjoin" ]
@@ -294,10 +299,10 @@ defmodule Gmex do
 
       end
 
-      if append == :unknown_option do
+      if new_option == :unknown_option do
         { :error, :unknown_option }
       else
-        { :ok, options ++ append }
+        { :ok, Gmex.Image.append_option( image, new_option ) }
       end
 
     end
