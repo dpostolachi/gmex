@@ -32,10 +32,13 @@ defmodule Gmex do
   Opens image source.
 
   ## Options
-    * `:gm_path` - path to GraphicsMagick executable, defaults to `gm`
+    * `:gm_path` - path to GraphicsMagick executable, defaults to `gm`, if the executable is missing an error will be returned.
   ## Example
       iex> Gmex.open( "test/images/blossom.jpg" )
       { :ok, %Gmex.Image{ image: "test/images/blossom.jpg", options: [ "gm" ] } }
+
+      iex> Gmex.open( "test/images/blossom.jpg", gm_path: "/404/gm" )
+      { :error, "graphicsmagick executable not found at:/404/gm" }
 
       iex> Gmex.open( "non-existing.png" )
       { :error, :enoent }
