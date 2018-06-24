@@ -33,7 +33,7 @@ end
 
 ```elixir
 import Gmex
-open( "someimage.png" )
+Gmex.open( "someimage.png" )
     |> option( :negate )
     |> option( { :resize, 50, 50 } )
     |> option( :strip )
@@ -41,6 +41,14 @@ open( "someimage.png" )
     |> save( "newimage.jpg" )
 ```
 
+## Resizing
+
+```elixir
+import Gmex
+Gmex.open( "someimage.png" )
+    |> resize( width: 300, height: 200, type: :fit )
+    |> save( "resized.jpg" )
+```
 
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can

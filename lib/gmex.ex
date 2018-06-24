@@ -4,20 +4,27 @@ defmodule Gmex do
   A simple wrapper for GraphicsMagick in Elixir.
   """
 
-  @default_options [
+  @default_open_options [
       gm_path: "gm"
+  ]
+
+  @default_resize_options [
+    width: :auto,
+    height: :auto,
+    resize: :fill
   ]
 
   @type image :: { :ok, Gmex.Image }
   @type gmex_error :: { :error, any() }
   @type image_info :: [ width: Integer.t, height: Integer.t, size: String.t, format: String.t, quality: Integer.t ]
+  @type resize_options :: [ width: Integer.t, height: Integer.t, type: :fill | :fit ]
   @type open_options :: [ gm_path: String.t() ]
 
   @doc false
 
   def test_gm( options \\ [] ) do
 
-    final_options = Keyword.merge( @default_options, options )
+    final_options = Keyword.merge( @default_open_options, options )
     executable = Keyword.get( final_options, :gm_path )
 
     if System.find_executable( executable ) == nil do
@@ -122,7 +129,7 @@ defmodule Gmex do
 
       if status_code == 0 do
 
-        [ :ok,
+        { :ok,
           String.split( image_data, "," )
             |> Enum.reduce( [], fn ( row, acc ) ->
 
@@ -159,7 +166,7 @@ defmodule Gmex do
 
               end
 
-            end ) ]
+            end ) }
 
       else
         { :error, image_data }
@@ -169,6 +176,82 @@ defmodule Gmex do
 
   end
 
+  @doc """
+  Resizes image
+
+  ## Options
+    * `:width` - (Optional) width of the resized image, if not specified will be calculated based on proportions.
+    * `:height` - (Optional) height of the resized image, if not specified will be calculated based on proportions.
+    * `:type` - (Optional) resize type, can be either :fill or :fit, defaults to :fill.
+      * `:fill` - Generates images of the specified size with cropping.
+      * `:fit` - Generates an image that will fit in the specified size, no cropping.
+
+  ## Example
+      iex> Gmex.open( "test/images/blossom.jpg" )
+      iex> |> Gmex.resize( width: 300, height: 200, type: :fill )
+      iex> |> Gmex.save( "newimage.jpg" )
+      { :ok, nil }
+
+  """
+
+  @spec resize( image, resize_options ) :: image | gmex_error
+
+  def resize( image, options \\ [] ) do
+    with { :ok, _ } <- image
+    do
+
+      options = Keyword.merge( @default_resize_options, options )
+
+      { _ ,image_data } = image |> get_info
+
+
+      src_width = image_data |> Keyword.get( :width )
+      src_height = image_data |> Keyword.get( :height )
+
+      tar_width = options |> Keyword.get( :width, :auto )
+      tar_height = options |> Keyword.get( :height, :auto )
+
+      src_ratio = src_width / src_height
+
+      resize_type = options |> Keyword.get( :type, :fill )
+
+      tar_width = cond do
+        tar_width == :auto and tar_height == :auto -> src_width
+        tar_width == :auto and tar_height != :auto -> src_width * tar_height / src_height
+        true -> tar_width
+      end
+
+      tar_height = cond do
+        tar_height == :auto and tar_width == :auto -> src_width
+        tar_height == :auto and tar_width != :auto -> src_height * tar_width / src_width
+        true -> tar_height
+      end
+
+      tar_ratio = tar_width / tar_height
+
+
+      case resize_type do
+        :fill ->
+
+          { resize_width, resize_height } = if src_ratio >= tar_ratio do
+            { src_width / ( src_height / tar_height ), tar_height }
+          else
+            { tar_width, src_height / ( src_width / tar_width ) }
+          end
+
+          image
+            |> option( { :resize, resize_width, resize_height } )
+            |> option( { :gravity, "center" } )
+            |> option( { :crop, tar_width, tar_height, 0, 0 } )
+
+        :fit ->
+          image
+            |> option( { :resize, tar_width, tar_height } )
+        _ -> { :error, "unknown resize type" }
+      end
+
+    end
+  end
   @doc """
   Apply a GraphicsMagick option to the given image.
 
@@ -242,12 +325,22 @@ defmodule Gmex do
           [ "-blur", "#{radius}" ]
 
         { :crop, width, height } ->
+
+          width = Kernel.round( width )
+          height = Kernel.round( height )
+
           [ "-crop", "#{width}x#{height}" ]
 
         { :crop, width, height, x_offset, y_offset } ->
 
-          x_offset = if x_offset > 0, do: "+#{x_offset}", else: x_offset
-          y_offset = if y_offset > 0, do: "+#{y_offset}", else: y_offset
+          width = Kernel.round( width )
+          height = Kernel.round( height )
+
+          x_offset = Kernel.round( x_offset )
+          y_offset = Kernel.round( y_offset )
+
+          x_offset = if x_offset >= 0, do: "+#{x_offset}", else: x_offset
+          y_offset = if y_offset >= 0, do: "+#{y_offset}", else: y_offset
 
           [ "-crop", "#{width}x#{height}#{x_offset}#{y_offset}" ]
 
@@ -255,12 +348,22 @@ defmodule Gmex do
           [ "-edge", radius ]
 
         { :extent, width, height } ->
+
+          width = Kernel.round( width )
+          height = Kernel.round( height )
+
           [ "-extent", "#{width}x#{height}" ]
 
         { :extent, width, height, x_offset, y_offset } ->
 
-          x_offset = if x_offset > 0, do: "+#{x_offset}", else: x_offset
-          y_offset = if y_offset > 0, do: "+#{y_offset}", else: y_offset
+          width = Kernel.round( width )
+          height = Kernel.round( height )
+
+          x_offset = Kernel.round( x_offset )
+          y_offset = Kernel.round( y_offset )
+
+          x_offset = if x_offset >= 0, do: "+#{x_offset}", else: x_offset
+          y_offset = if y_offset >= 0, do: "+#{y_offset}", else: y_offset
 
           [ "-extent", "#{width}x#{height}#{x_offset}#{y_offset}" ]
 
@@ -302,6 +405,10 @@ defmodule Gmex do
           [ "-quality", quality ]
 
         { :resize, width, height } ->
+
+          width = Kernel.round( width )
+          height = Kernel.round( height )
+
           [ "-resize", "#{width}x#{height}" ]
 
         { :resize, percents } ->
@@ -311,12 +418,26 @@ defmodule Gmex do
           [ "-rotate", degrees ]
 
         { :size, width, height } ->
+
+          width = Kernel.round( width )
+          height = Kernel.round( height )
+
           [ "-size", "#{width}x#{height}" ]
 
         { :size, width, height, offset } ->
+
+          width = Kernel.round( width )
+          height = Kernel.round( height )
+
+          offset = Kernel.round( offset )
+
           [ "-size", "#{width}x#{height}+#{offset}" ]
 
         { :thumbnail, width, height } ->
+
+          width = Kernel.round( width )
+          height = Kernel.round( height )
+
           [ "-thumbnail", "#{width}x#{height}" ]
 
         { :thumbnail, percents } ->
