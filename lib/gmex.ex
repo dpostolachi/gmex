@@ -316,7 +316,7 @@ defmodule Gmex do
           [ "-adjoin" ]
 
         { :background, color } ->
-          [ "-background", color ]
+          [ "-background", "#{color}" ]
 
         { :blur, radius, sigma } ->
           [ "-blur", "#{radius}x#{sigma}" ]
@@ -345,7 +345,7 @@ defmodule Gmex do
           [ "-crop", "#{width}x#{height}#{x_offset}#{y_offset}" ]
 
         { :edge, radius } ->
-          [ "-edge", radius ]
+          [ "-edge", "#{radius}" ]
 
         { :extent, width, height } ->
 
@@ -372,7 +372,7 @@ defmodule Gmex do
           [ "-flatten" ]
 
         { :fill, color } ->
-          [ "-flatten", color ]
+          [ "-flatten", "#{color}" ]
 
         :strip ->
           [ "-strip" ]
@@ -381,10 +381,10 @@ defmodule Gmex do
           [ "-flip" ]
 
         { :format, format } ->
-          [ "-format", format ]
+          [ "-format", "#{format}" ]
 
         { :gravity, gravity } ->
-          [ "-gravity", gravity ]
+          [ "-gravity", "#{gravity}" ]
 
         :magnify ->
           [ "magnify" ]
@@ -399,10 +399,10 @@ defmodule Gmex do
           [ "-negate" ]
 
         { :opaque, color } ->
-          [ "-opaque", color ]
+          [ "-opaque", "#{color}" ]
 
         { :quality, quality } ->
-          [ "-quality", quality ]
+          [ "-quality", "#{quality}" ]
 
         { :resize, width, height } ->
 
@@ -415,7 +415,7 @@ defmodule Gmex do
           [ "-resize", "#{percents}%" ]
 
         { :rotate, degrees } ->
-          [ "-rotate", degrees ]
+          [ "-rotate", "#{degrees}" ]
 
         { :size, width, height } ->
 
@@ -444,13 +444,14 @@ defmodule Gmex do
           [ "-thumbnail", "#{percents}%" ]
 
         { :transparent, color } ->
-          [ "-transparent", color ]
+          [ "-transparent", "#{color}" ]
 
         { :type, type } ->
-          [ "-type", type ]
+          [ "-type", "#{type}" ]
 
         { :custom, other_options } ->
           other_options
+            |> Enum.map( fn( option ) -> "#{option}" end )
 
         _ -> :unknown_option
 
