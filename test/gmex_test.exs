@@ -11,7 +11,12 @@ defmodule GmexTest do
     image_info = Gmex.open( "test/images/blossom.jpg" )
       |> Gmex.get_info()
 
-    assert image_info == {:ok, [width: 640, height: 480, size: "104.7Ki", format: :jpeg, compression_quality: 92]}
+    { :ok, [ width: width, height: height, size: size, format: format, compression_quality: _ ] } = image_info
+
+    assert width == 640 and
+      height == 480 and
+      size == "104.7Ki"
+      format == :jpeg
 
   end
 
