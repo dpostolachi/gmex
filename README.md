@@ -1,6 +1,6 @@
 # Gmex
 
-[![Build Status](https://travis-ci.org/dpostolachi/gmex.png?branch=master)](https://travis-ci.org/voodoo-child/gmex)
+[![Build Status](https://travis-ci.org/dpostolachi/gmex.png?branch=master)](https://travis-ci.org/dpostolachi/gmex)
 
 A simple GraphicsMagick wrapper for Elixir.
 
