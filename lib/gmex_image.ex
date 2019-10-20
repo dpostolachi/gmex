@@ -1,8 +1,8 @@
 defmodule Gmex.Image do
 
   @type t :: %Gmex.Image{
-    image: String.t(),
-    options: [ String.t() ]
+    image: String.t,
+    options: [ String.t ]
   }
 
   defstruct [
@@ -10,8 +10,7 @@ defmodule Gmex.Image do
     options: [],
   ]
 
-  @spec append_option( Gmex.Image, [ String.t() ] ) :: Gmex.Image
-
+  @spec append_option( Gmex.Image, [ String.t ] ) :: Gmex.Image
   def append_option( image, new_option ) do
     image
       |> Map.put( :options, image.options ++ new_option )

@@ -15,10 +15,10 @@ defmodule Gmex do
   ]
 
   @type image :: { :ok, Gmex.Image }
-  @type gmex_error :: { :error, any() }
+  @type gmex_error :: { :error, any }
   @type image_info :: [ width: Integer.t, height: Integer.t, size: String.t, format: String.t, quality: Integer.t ]
   @type resize_options :: [ width: Integer.t, height: Integer.t, type: :fill | :fit ]
-  @type open_options :: [ gm_path: String.t() ]
+  @type open_options :: [ gm_path: String.t ]
 
   @doc false
 
@@ -240,13 +240,15 @@ defmodule Gmex do
           end
 
           image
-            |> option( { :resize, resize_width, resize_height } )
-            |> option( { :gravity, "center" } )
-            |> option( { :crop, tar_width, tar_height, 0, 0 } )
+            |> options(
+              resize: { resize_width, resize_height },
+              gravity: "center",
+              crop: { tar_width, tar_height, 0, 0 }
+            )
 
         :fit ->
           image
-            |> option( { :resize, tar_width, tar_height } )
+            |> option( resize: { tar_width, tar_height } )
         _ -> { :error, "unknown resize type" }
       end
 
@@ -257,214 +259,242 @@ defmodule Gmex do
 
   ## Example
       iex> Gmex.open( "test/images/blossom.jpg" )
-      iex> |> Gmex.option( :negate )
-      iex> |> Gmex.option( { :resize, 50, 50 } )
-      iex> |> Gmex.option( :strip )
-      iex> |> Gmex.option( { :format, "jpg" } )
+      iex> |> Gmex.option( negate: true )
+      iex> |> Gmex.option( resize: { 50, 50 } )
+      iex> |> Gmex.option( strip: true )
+      iex> |> Gmex.option( format: "jpg" )
       { :ok, %Gmex.Image{ image: "test/images/blossom.jpg", options: [ "gm", "-negate", "-resize", "50x50", "-strip", "-format", "jpg" ] } }
 
   List of available options:
 
   | Option | GraphicsMagick |
   | ---- | ---- |
-  | :plus_adjoin | +adjoin |
-  | :adjoin | -adjoin |
-  | { :blur, radius, sigma } | -blur radiusxsigma |
-  | { :blur, radius } | -blur radius |
-  | { :crop, width, height, x_offset, y_offset } | -crop widthxheight+x_offset+y_offset |
-  | { :crop, width, height } | -crop widthxheight |
-  | { :edge, edge } | -edge edge |
-  | { :extent, width, height, x_offset, y_offset } | -extent widthxheight+x_offset+y_offset |
-  | { :extent, width, height } | -extent widthxheight |
-  | flatten | -flatten |
-  | { :fill, color } | -fill color |
-  | :strip | -strip |
-  | :flip | -flip |
-  | { :format, format } | -format format |
-  | { :gravity, gravity } | -gravity gravity |
-  | magnify | -magnify |
-  | plus_matte | +matte |
-  | matte | -matte |
-  | negate | -negate |
-  | { :opaque, color } | -opaque color |
-  | { :quality, quality } | -quality quality |
-  | { :resize, width, height } | -resize widthxheight |
-  | { :resize, percents } | -resize percents% |
-  | { :rotate, degrees } | -rotate degrees |
-  | { :size, width, height } | -size widthxheight |
-  | { :size, width, height, offset } | -size widthxheight+offset |
-  | { :thumbnail, width, height } | -thumbnail widthxheight |
-  | { :thumbnail, percents } | -thumbnail percents% |
-  | { :transparent, color } | -transparent color |
-  | { :type, type } | -type type |
-  | { :custom, [ arg1, arg2, arg3... ] } | arg1 arg2 arg3 ... |
+  | adjoin: true | +adjoin |
+  | adjoin: false | -adjoin |
+  | blur: { radius, sigma } | -blur radiusxsigma |
+  | blur: radius | -blur radius |
+  | crop: { width, height, x_offset, y_offset } | -crop widthxheight+x_offset+y_offset |
+  | crop: { width, height } | -crop widthxheight |
+  | edge: edge | -edge edge |
+  | extent: { width, height, x_offset, y_offset } | -extent widthxheight+x_offset+y_offset |
+  | extent: { width, height } | -extent widthxheight |
+  | flatten: true | -flatten |
+  | fill: color | -fill color |
+  | strip: true | -strip |
+  | flip: true | -flip |
+  | format: format } | -format format |
+  | gravity: gravity | -gravity gravity |
+  | magnify: true | -magnify |
+  | matte: true | +matte |
+  | matte: false | -matte |
+  | negate: true | -negate |
+  | opaque: color | -opaque color |
+  | quality: quality | -quality quality |
+  | resize: { width, height } | -resize widthxheight |
+  | resize: percents | -resize percents% |
+  | rotate: degrees | -rotate degrees |
+  | size: { width, height } | -size widthxheight |
+  | size: { width, height, offset } | -size widthxheight+offset |
+  | thumbnail: { :thumbnail, width, height } | -thumbnail widthxheight |
+  | thumbnail: { :thumbnail, percents } | -thumbnail percents% |
+  | transparent: color | -transparent color |
+  | type: type | -type type |
+  | custom: [ arg1, arg2, arg3... ] | arg1 arg2 arg3 ... |
   """
 
   @spec option( image, Option ) :: image | gmex_error
 
-  def option( image, option ) do
+  def option( { :ok, image = %Gmex.Image{} }, [ adjoin: true ] ) do
+    { :ok, Gmex.Image.append_option( image, [ "+adjoin" ] ) }
+  end
 
-    with { :ok, image } <- image
-    do
+  def option( { :ok, image = %Gmex.Image{} }, [ adjoin: false ] ) do
+    { :ok, Gmex.Image.append_option( image, [ "-adjoin" ] ) }
+  end
 
-      new_option = case option do
+  def option( { :ok, image = %Gmex.Image{} }, [ background: color ] ) do
+    { :ok, Gmex.Image.append_option( image, [ "-background", "#{color}" ] ) }
+  end
 
-        :plus_adjoin ->
-          [ "+adjoin" ]
+  def option( { :ok, image = %Gmex.Image{} }, [ blur: radius ] ) do
+    { :ok, Gmex.Image.append_option( image, [ "-blur", "#{radius}" ] ) }
+  end
 
-        :adjoin ->
-          [ "-adjoin" ]
+  def option( { :ok, image = %Gmex.Image{} }, [ blur: { radius, sigma } ] ) do
+    { :ok, Gmex.Image.append_option( image, [ "-blur", "#{radius}x#{sigma}" ] ) }
+  end
 
-        { :background, color } ->
-          [ "-background", "#{color}" ]
+  def option( { :ok, image = %Gmex.Image{} }, [ crop: { width, height } ] ) do
+    width = Kernel.round( width )
+    height = Kernel.round( height )
 
-        { :blur, radius, sigma } ->
-          [ "-blur", "#{radius}x#{sigma}" ]
+    { :ok, Gmex.Image.append_option( image, [ "-crop", "#{width}x#{height}" ] ) }
+  end
 
-        { :blur, radius } ->
-          [ "-blur", "#{radius}" ]
+  def option( { :ok, image = %Gmex.Image{} }, [ crop: { width, height, x_offset, y_offset } ] ) do
+    width = Kernel.round( width )
+    height = Kernel.round( height )
 
-        { :crop, width, height } ->
+    x_offset = Kernel.round( x_offset )
+    y_offset = Kernel.round( y_offset )
 
-          width = Kernel.round( width )
-          height = Kernel.round( height )
+    x_offset = if x_offset >= 0, do: "+#{x_offset}", else: x_offset
+    y_offset = if y_offset >= 0, do: "+#{y_offset}", else: y_offset
 
-          [ "-crop", "#{width}x#{height}" ]
+    { :ok, Gmex.Image.append_option( image, [ "-crop", "#{width}x#{height}#{x_offset}#{y_offset}" ] ) }
+  end
 
-        { :crop, width, height, x_offset, y_offset } ->
+  def option( { :ok, image = %Gmex.Image{} }, [ edge: radius ] ) do
+    { :ok, Gmex.Image.append_option( image, [ "-edge", "#{radius}" ] ) }
+  end
 
-          width = Kernel.round( width )
-          height = Kernel.round( height )
+  def option( { :ok, image = %Gmex.Image{} }, [ extent: { width, height } ] ) do
+    width = Kernel.round( width )
+    height = Kernel.round( height )
 
-          x_offset = Kernel.round( x_offset )
-          y_offset = Kernel.round( y_offset )
+    { :ok, Gmex.Image.append_option( image, [ "-extent", "#{width}x#{height}" ] ) }
+  end
 
-          x_offset = if x_offset >= 0, do: "+#{x_offset}", else: x_offset
-          y_offset = if y_offset >= 0, do: "+#{y_offset}", else: y_offset
+  def option( { :ok, image = %Gmex.Image{} }, [ extent: { width, height, x_offset, y_offset } ] ) do
+    width = Kernel.round( width )
+    height = Kernel.round( height )
 
-          [ "-crop", "#{width}x#{height}#{x_offset}#{y_offset}" ]
+    x_offset = Kernel.round( x_offset )
+    y_offset = Kernel.round( y_offset )
 
-        { :edge, radius } ->
-          [ "-edge", "#{radius}" ]
+    x_offset = if x_offset >= 0, do: "+#{x_offset}", else: x_offset
+    y_offset = if y_offset >= 0, do: "+#{y_offset}", else: y_offset
 
-        { :extent, width, height } ->
+    { :ok, Gmex.Image.append_option( image, [ "-extent", "#{width}x#{height}#{x_offset}#{y_offset}" ] ) }
+  end
 
-          width = Kernel.round( width )
-          height = Kernel.round( height )
+  def option( { :ok, image = %Gmex.Image{} }, [ flatten: true ] ) do
+    { :ok, Gmex.Image.append_option( image, [ "-flatten" ] ) }
+  end
 
-          [ "-extent", "#{width}x#{height}" ]
+  def option( { :ok, image = %Gmex.Image{} }, [ fill: color ] ) do
+    { :ok, Gmex.Image.append_option( image, [ "-flatten", "#{color}" ] ) }
+  end
 
-        { :extent, width, height, x_offset, y_offset } ->
+  def option( { :ok, image = %Gmex.Image{} }, [ strip: true ] ) do
+    { :ok, Gmex.Image.append_option( image, [ "-strip" ] ) }
+  end
 
-          width = Kernel.round( width )
-          height = Kernel.round( height )
+  def option( { :ok, image = %Gmex.Image{} }, [ flip: true ] ) do
+    { :ok, Gmex.Image.append_option( image, [ "-flip" ] ) }
+  end
 
-          x_offset = Kernel.round( x_offset )
-          y_offset = Kernel.round( y_offset )
+  def option( { :ok, image = %Gmex.Image{} }, [ format: format ] ) do
+    { :ok, Gmex.Image.append_option( image, [ "-format", "#{format}" ] ) }
+  end
 
-          x_offset = if x_offset >= 0, do: "+#{x_offset}", else: x_offset
-          y_offset = if y_offset >= 0, do: "+#{y_offset}", else: y_offset
+  def option( { :ok, image = %Gmex.Image{} }, [ gravity: gravity ] ) do
+    { :ok, Gmex.Image.append_option( image, [ "-gravity", "#{gravity}" ] ) }
+  end
 
-          [ "-extent", "#{width}x#{height}#{x_offset}#{y_offset}" ]
+  def option( { :ok, image = %Gmex.Image{} }, [ magnify: true ] ) do
+    { :ok, Gmex.Image.append_option( image, [ "magnify" ] ) }
+  end
 
+  def option( { :ok, image = %Gmex.Image{} }, [ matte: true ] ) do
+    { :ok, Gmex.Image.append_option( image, [ "+matte" ] ) }
+  end
 
-        :flatten ->
-          [ "-flatten" ]
+  def option( { :ok, image = %Gmex.Image{} }, [ matte: false ] ) do
+    { :ok, Gmex.Image.append_option( image, [ "-matte" ] ) }
+  end
 
-        { :fill, color } ->
-          [ "-flatten", "#{color}" ]
+  def option( { :ok, image = %Gmex.Image{} }, [ negate: true ] ) do
+    { :ok, Gmex.Image.append_option( image, [ "-negate" ] ) }
+  end
 
-        :strip ->
-          [ "-strip" ]
+  def option( { :ok, image = %Gmex.Image{} }, [ opaque: color ] ) do
+    { :ok, Gmex.Image.append_option( image, [ "-opaque", "#{color}" ] ) }
+  end
 
-        :flip ->
-          [ "-flip" ]
+  def option( { :ok, image = %Gmex.Image{} }, [ quality: quality ] ) do
+    { :ok, Gmex.Image.append_option( image, [ "-quality", "#{quality}" ] ) }
+  end
 
-        { :format, format } ->
-          [ "-format", "#{format}" ]
+  def option( { :ok, image = %Gmex.Image{} }, [ resize: { width, height } ] ) do
+    width = Kernel.round( width )
+    height = Kernel.round( height )
 
-        { :gravity, gravity } ->
-          [ "-gravity", "#{gravity}" ]
+    { :ok, Gmex.Image.append_option( image, [ "-resize", "#{width}x#{height}" ] ) }
+  end
 
-        :magnify ->
-          [ "magnify" ]
+  def option( { :ok, image = %Gmex.Image{} }, [ resize: percents ] ) do
+    { :ok, Gmex.Image.append_option( image, [ "-resize", "#{percents}%" ] ) }
+  end
 
-        :plus_matte ->
-          [ "+matte" ]
+  def option( { :ok, image = %Gmex.Image{} }, [ rotate: degrees ] ) do
+    { :ok, Gmex.Image.append_option( image, [ "-rotate", "#{degrees}" ] ) }
+  end
 
-        :matte ->
-          [ "-matte" ]
+  def option( { :ok, image = %Gmex.Image{} }, [ size: { width, height } ] ) do
+    width = Kernel.round( width )
+    height = Kernel.round( height )
 
-        :negate ->
-          [ "-negate" ]
+    { :ok, Gmex.Image.append_option( image, [ "-size", "#{width}x#{height}" ] ) }
+  end
 
-        { :opaque, color } ->
-          [ "-opaque", "#{color}" ]
+  def option( { :ok, image = %Gmex.Image{} }, [ size: { width, height, offset } ] ) do
+    width = Kernel.round( width )
+    height = Kernel.round( height )
 
-        { :quality, quality } ->
-          [ "-quality", "#{quality}" ]
+    offset = Kernel.round( offset )
+    { :ok, Gmex.Image.append_option( image, [ "-size", "#{width}x#{height}+#{offset}" ] ) }
+  end
 
-        { :resize, width, height } ->
+  def option( { :ok, image = %Gmex.Image{} }, [ thumbnail: { width, height } ] ) do
+    width = Kernel.round( width )
+    height = Kernel.round( height )
 
-          width = Kernel.round( width )
-          height = Kernel.round( height )
+    { :ok, Gmex.Image.append_option( image, [ "-thumbnail", "#{width}x#{height}" ] ) }
+  end
 
-          [ "-resize", "#{width}x#{height}" ]
+  def option( { :ok, image = %Gmex.Image{} }, [ thumbnail: percents ] ) do
+    { :ok, Gmex.Image.append_option( image, [ "-thumbnail", "#{percents}%" ] ) }
+  end
 
-        { :resize, percents } ->
-          [ "-resize", "#{percents}%" ]
+  def option( { :ok, image = %Gmex.Image{} }, [ transparent: color ] ) do
+    { :ok, Gmex.Image.append_option( image, [ "-transparent", "#{color}" ] ) }
+  end
 
-        { :rotate, degrees } ->
-          [ "-rotate", "#{degrees}" ]
+  def option( { :ok, image = %Gmex.Image{} }, [ type: type ] ) do
+    { :ok, Gmex.Image.append_option( image, [ "-type", "#{type}" ] ) }
+  end
 
-        { :size, width, height } ->
+  def option( { :ok, image = %Gmex.Image{} }, [ custom: other_options ] ) when is_list( other_options ) do
+    new_options = other_options
+      |> Enum.map( fn( option ) -> "#{option}" end )
+    { :ok, Gmex.Image.append_option( image, new_options ) }
+  end
 
-          width = Kernel.round( width )
-          height = Kernel.round( height )
+  def option( { :ok, _image = %Gmex.Image{} }, _option ) do
+    { :error, :unknown_option }
+  end
 
-          [ "-size", "#{width}x#{height}" ]
+  @doc """
+  Apply a list GraphicsMagick option to the given image.
 
-        { :size, width, height, offset } ->
-
-          width = Kernel.round( width )
-          height = Kernel.round( height )
-
-          offset = Kernel.round( offset )
-
-          [ "-size", "#{width}x#{height}+#{offset}" ]
-
-        { :thumbnail, width, height } ->
-
-          width = Kernel.round( width )
-          height = Kernel.round( height )
-
-          [ "-thumbnail", "#{width}x#{height}" ]
-
-        { :thumbnail, percents } ->
-          [ "-thumbnail", "#{percents}%" ]
-
-        { :transparent, color } ->
-          [ "-transparent", "#{color}" ]
-
-        { :type, type } ->
-          [ "-type", "#{type}" ]
-
-        { :custom, other_options } ->
-          other_options
-            |> Enum.map( fn( option ) -> "#{option}" end )
-
-        _ -> :unknown_option
-
-      end
-
-      if new_option == :unknown_option do
-        { :error, :unknown_option }
+  ## Example
+      iex> Gmex.open( "test/images/blossom.jpg" )
+      iex> |> Gmex.options( negate: true, resize: { 50, 50 }, strip: true, format: "jpg" )
+      { :ok, %Gmex.Image{ image: "test/images/blossom.jpg", options: [ "gm", "-negate", "-resize", "50x50", "-strip", "-format", "jpg" ] } }
+  """
+  @spec option( image, [ Option ] ) :: image | gmex_error
+  def options( { :ok, image = %Gmex.Image{} }, [ option | other_options ] ) do
+    with { :ok, image } <- option( { :ok, image }, [ option ] ) do
+      if length( other_options ) === 0 do
+        { :ok, image }
       else
-        { :ok, Gmex.Image.append_option( image, new_option ) }
+        options( { :ok, image }, other_options )
       end
-
+    else
+      { :error, error } ->
+        { :error, error }
     end
-
   end
 
 end
