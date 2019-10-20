@@ -34,10 +34,7 @@ end
 ```elixir
 import Gmex
 Gmex.open( "someimage.png" )
-    |> option( :negate )
-    |> option( { :resize, 50, 50 } )
-    |> option( :strip )
-    |> option( { :format, "jpg" } )
+    |> option( negate: true, resize: { 50, 50 }, strip: true, format: "jpg" )
     |> save( "newimage.jpg" )
 ```
 
