@@ -491,9 +491,6 @@ defmodule Gmex do
       else
         options( { :ok, image }, other_options )
       end
-    else
-      { :error, error } ->
-        { :error, error }
     end
   end
 
