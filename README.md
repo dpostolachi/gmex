@@ -1,6 +1,6 @@
 # Gmex
 
-[![Build Status](https://travis-ci.org/dpostolachi/gmex.png?branch=master)](https://travis-ci.org/voodoo-child/gmex)
+[![Build Status](https://travis-ci.org/dpostolachi/gmex.png?branch=master)](https://travis-ci.org/dpostolachi/gmex)
 
 A simple GraphicsMagick wrapper for Elixir.
 
@@ -34,10 +34,7 @@ end
 ```elixir
 import Gmex
 Gmex.open( "someimage.png" )
-    |> option( :negate )
-    |> option( { :resize, 50, 50 } )
-    |> option( :strip )
-    |> option( { :format, "jpg" } )
+    |> option( negate: true, resize: { 50, 50 }, strip: true, format: "jpg" )
     |> save( "newimage.jpg" )
 ```
 
