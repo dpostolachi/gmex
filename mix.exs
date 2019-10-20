@@ -4,7 +4,7 @@ defmodule Gmex.Mixfile do
   def project do
     [
       app: :gmex,
-      version: "0.1.4",
+      version: "0.1.5",
       elixir: "~> 1.2",
       start_permanent: Mix.env == :prod,
       description: description(),
@@ -37,9 +37,9 @@ defmodule Gmex.Mixfile do
           files: [ "lib", "mix.exs", "README.md" ],
           licenses: [ "MIT" ],
           links: %{
-              "GitHub" => "https://github.com/voodoo-child/gmex"
+              "GitHub" => "https://github.com/dpostolachi/gmex"
           },
-          maintainers: [ "voodoo-child" ]
+          maintainers: [ "dpostolachi" ]
       ]
   end
 
