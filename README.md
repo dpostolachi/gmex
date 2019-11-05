@@ -24,7 +24,7 @@ by adding `gmex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:gmex, "~> 0.1.6-1"}
+    {:gmex, "~> 0.1.7"}
   ]
 end
 ```
