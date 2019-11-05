@@ -4,7 +4,7 @@ defmodule Gmex.Mixfile do
   def project do
     [
       app: :gmex,
-      version: "0.1.6",
+      version: "0.1.6-1",
       elixir: "~> 1.2",
       start_permanent: Mix.env == :prod,
       description: description(),

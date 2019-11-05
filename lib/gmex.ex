@@ -14,11 +14,40 @@ defmodule Gmex do
     resize: :fill
   ]
 
-  @type image :: { :ok, Gmex.Image }
+  @type image :: { :ok, %Gmex.Image{} }
   @type gmex_error :: { :error, any }
   @type image_info :: [ width: Integer.t, height: Integer.t, size: String.t, format: String.t, quality: Integer.t ]
   @type resize_options :: [ width: Integer.t, height: Integer.t, type: :fill | :fit ]
   @type open_options :: [ gm_path: String.t ]
+  @type option_param :: String.t | Integer.t | Float.t
+  @type option :: [ adjoin: boolean ] |
+    [ blur: { option_param, option_param } ] |
+    [ blur: option_param ] |
+    [ crop: { option_param, option_param, option_param, option_param } ] |
+    [ crop: { option_param, option_param } ] |
+    [ edge: option_param ] |
+    [ extent: { option_param, option_param, option_param, option_param } ] |
+    [ extent: { option_param, option_param } ] |
+    [ flatten: boolean ] |
+    [ fill: String.t ] |
+    [ strip: boolean ] |
+    [ format: String.t ] |
+    [ gravity: String.t ] |
+    [ magnify: boolean ] |
+    [ matte: boolean ] |
+    [ negate: true ] |
+    [ opaque: String.t ] |
+    [ quality: Integer.t ] |
+    [ resize: { option_param, option_param } ] |
+    [ resize: Integer.t ] |
+    [ rotate: Integer.t ] |
+    [ size: { option_param, option_param } ] |
+    [ size: { option_param, option_param, option_param } ] |
+    [ thumbnail: { :thumbnail, option_param, option_param } ] |
+    [ thumbnail: { :thumbnail, option_param } ] |
+    [ transparent: String.t ] |
+    [ type: String.t ] |
+    [ custom: list( option_param ) ]
 
   @doc false
 
@@ -302,8 +331,7 @@ defmodule Gmex do
   | custom: [ arg1, arg2, arg3... ] | arg1 arg2 arg3 ... |
   """
 
-  @spec option( image, Option ) :: image | gmex_error
-
+  @spec option( image, option ) :: image
   def option( { :ok, image = %Gmex.Image{} }, [ adjoin: true ] ) do
     { :ok, Gmex.Image.append_option( image, [ "+adjoin" ] ) }
   end
@@ -483,7 +511,7 @@ defmodule Gmex do
       iex> |> Gmex.options( negate: true, resize: { 50, 50 }, strip: true, format: "jpg" )
       { :ok, %Gmex.Image{ image: "test/images/blossom.jpg", options: [ "gm", "-negate", "-resize", "50x50", "-strip", "-format", "jpg" ] } }
   """
-  @spec option( image, [ Option ] ) :: image | gmex_error
+  @spec options( image, option ) :: image | gmex_error
   def options( { :ok, image = %Gmex.Image{} }, [ option | other_options ] ) do
     with { :ok, image } <- option( { :ok, image }, [ option ] ) do
       if length( other_options ) === 0 do

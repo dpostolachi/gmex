@@ -31,6 +31,7 @@ defmodule GmexTest do
   test "Resize image to fill" do
     Gmex.open( "test/images/blossom.jpg" )
       |> Gmex.resize( width: 300, height: 200, type: :fill )
+      |> Gmex.options( negate: true )
       |> Gmex.save( @resize_to_fill_path )
 
     { :ok, image_info } = Gmex.open( @resize_to_fill_path )
