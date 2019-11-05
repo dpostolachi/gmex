@@ -24,7 +24,7 @@ by adding `gmex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:gmex, "~> 0.1.0"}
+    {:gmex, "~> 0.1.6"}
   ]
 end
 ```
@@ -34,7 +34,7 @@ end
 ```elixir
 import Gmex
 Gmex.open( "someimage.png" )
-    |> option( negate: true, resize: { 50, 50 }, strip: true, format: "jpg" )
+    |> options( negate: true, resize: { 50, 50 }, strip: true, format: "jpg" )
     |> save( "newimage.jpg" )
 ```
 
